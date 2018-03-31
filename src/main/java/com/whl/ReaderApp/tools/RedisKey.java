@@ -6,7 +6,7 @@ package com.whl.ReaderApp.tools;
  * @author whl
  */
 public class RedisKey {
-    public static final String USER = "User:%s";
+    public static final String USER = "Users";
 
     public static String of(String key, Object... args){
         return String.format(key, args);

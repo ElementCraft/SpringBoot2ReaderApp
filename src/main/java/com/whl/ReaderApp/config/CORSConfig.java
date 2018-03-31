@@ -9,10 +9,13 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 /**
+ * 允许跨域的过滤器
+ *
  * @author 小王子
  */
 @Component
 public class CORSConfig implements WebFilter {
+
     @Override
     public Mono<Void> filter(final ServerWebExchange serverWebExchange, final WebFilterChain webFilterChain) {
         serverWebExchange.getResponse().getHeaders().add("Access-Control-Allow-Origin", "*");

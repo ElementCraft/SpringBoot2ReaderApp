@@ -29,15 +29,15 @@ public class UserService {
      * @return 处理结果
      */
     public Mono<Result> reg(User user) {
-        String redisKey = RedisKey.of(USER, user.getAccount());
+        String redisKey = RedisKey.of(USER);
         String jsonUser = JsonUtils.toString(user);
 
-        return redisTemplate.hasKey(redisKey)
+        return redisTemplate.opsForHash().hasKey(redisKey, user.getAccount())
                 .flatMap(bo -> {
                     if (bo) {
                         return Mono.just(Result.error(1, "账号已存在"));
                     } else {
-                        return redisTemplate.opsForValue().set(redisKey, jsonUser)
+                        return redisTemplate.opsForHash().put(redisKey, user.getAccount(), jsonUser)
                                 .map(flag -> {
                                     if (flag) {
                                         return Result.ok();
@@ -57,14 +57,14 @@ public class UserService {
      * @return 处理结果
      */
     public Mono<Result<Object>> login(User user) {
-        String redisKey = RedisKey.of(USER, user.getAccount());
+        String redisKey = RedisKey.of(USER);
 
-        return redisTemplate.hasKey(redisKey)
+        return redisTemplate.opsForHash().hasKey(redisKey, user.getAccount())
                 .filter(bo -> bo)
-                .flatMap(bo -> redisTemplate.opsForValue().get(redisKey)
-                        .filter(json -> (json != null) && !json.isEmpty())
+                .flatMap(bo -> redisTemplate.opsForHash().get(redisKey, user.getAccount())
+                        .filter(json -> (json != null) && !json.toString().isEmpty())
                         .map(json -> {
-                            User dbUser = JsonUtils.toObject(json, User.class);
+                            User dbUser = JsonUtils.toObject(json.toString(), User.class);
 
                             if (dbUser != null && dbUser.getPassword().equals(user.getPassword())) {
                                 return Result.ok();
