@@ -49,4 +49,30 @@ public class UserService {
                     }
                 });
     }
+
+    /**
+     * 用户登录处理
+     *
+     * @param user 用户实体
+     * @return 处理结果
+     */
+    public Mono<Result<Object>> login(User user) {
+        String redisKey = RedisKey.of(USER, user.getAccount());
+
+        return redisTemplate.hasKey(redisKey)
+                .filter(bo -> bo)
+                .flatMap(bo -> redisTemplate.opsForValue().get(redisKey)
+                        .filter(json -> (json != null) && !json.isEmpty())
+                        .map(json -> {
+                            User dbUser = JsonUtils.toObject(json, User.class);
+
+                            if (dbUser != null && dbUser.getPassword().equals(user.getPassword())) {
+                                return Result.ok();
+                            } else {
+                                return Result.error(2, "密码不正确");
+                            }
+                        })
+                        .switchIfEmpty(Mono.just(Result.error(1, "账号不存在"))))
+                .switchIfEmpty(Mono.just(Result.error(1, "账号不存在")));
+    }
 }

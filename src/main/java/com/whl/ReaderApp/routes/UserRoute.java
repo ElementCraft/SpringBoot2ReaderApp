@@ -33,6 +33,15 @@ public class UserRoute {
     @Autowired
     private UserService userService;
 
+    @Bean
+    RouterFunction<?> userRoutes() {
+
+        return nest(path("/api/user"),
+                route(POST("/register"), this::reg)
+                        .andRoute(POST("/login"), this::login)
+        );
+    }
+
     /**
      * 用户注册处理
      *
@@ -49,11 +58,18 @@ public class UserRoute {
                 .switchIfEmpty(badRequest().build());
     }
 
-    @Bean
-    RouterFunction<?> userRoutes() {
-
-        return nest(path("/api/user"),
-                route(POST("/reg"), this::reg)
-        );
+    /**
+     * 用户登录处理
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> login(ServerRequest request) {
+        return request.bodyToMono(User.class)
+                .filter(user -> user.getAccount() != null)
+                .filter(user -> user.getPassword() != null)
+                .flatMap(userService::login)
+                .flatMap(o -> ok().body(fromObject(o)))
+                .switchIfEmpty(badRequest().build());
     }
 }
