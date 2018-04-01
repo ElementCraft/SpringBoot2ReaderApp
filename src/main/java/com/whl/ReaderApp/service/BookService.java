@@ -93,7 +93,11 @@ public class BookService {
         Map<String, Part> parts = multiValueMap.toSingleValueMap();
         if (parts.containsKey("file")) {
             FilePart part = (FilePart) parts.get("file");
-            String ext = StringUtils.getFilenameExtension(part.filename()).toLowerCase();
+            String ext = StringUtils.getFilenameExtension(part.filename());
+
+            if (ext != null) {
+                ext = ext.toLowerCase();
+            }
 
             if (!"jpg".equals(ext) && !"gif".equals(ext) && !"png".equals(ext) && !"bmp".equals(ext)) {
                 return Mono.just(Result.error(3, "不允许上传该格式的文件"));
