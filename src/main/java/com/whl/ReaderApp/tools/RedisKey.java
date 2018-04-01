@@ -7,8 +7,10 @@ package com.whl.ReaderApp.tools;
  */
 public class RedisKey {
     public static final String USER = "Users";
+    public static final String BOOK = "Books";
+    public static final String BOOK_CHILD = "%s:%s";
 
-    public static String of(String key, Object... args){
+    public static String of(String key, Object... args) {
         return String.format(key, args);
     }
 }
