@@ -7,6 +7,7 @@ import com.whl.ReaderApp.tools.Result;
 import com.whl.ReaderApp.tools.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.http.codec.multipart.Part;
@@ -18,14 +19,14 @@ import reactor.core.publisher.Mono;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.whl.ReaderApp.tools.RedisKey.BOOK;
-import static com.whl.ReaderApp.tools.RedisKey.BOOK_CHILD;
+import static com.whl.ReaderApp.tools.RedisKey.*;
 
 /**
  * @author yyy
@@ -110,7 +111,7 @@ public class BookService {
 
             // 目录
             File dir = new File("upload");
-            if(!dir.exists()){
+            if (!dir.exists()) {
                 dir.mkdir();
             }
 
@@ -126,5 +127,33 @@ public class BookService {
         }
 
         return Mono.just(Result.error(1, "上传文件异常"));
+    }
+
+    /**
+     * 添加用户搜索历史
+     *
+     * @param acc     帐号
+     * @param keyword 搜索关键词
+     * @return 是否成功
+     */
+    public Mono<Result<Object>> addSearchHistory(String acc, String keyword) {
+        String redisKey = RedisKey.of(BOOK_SEARCH_HISTORY, acc);
+
+        return redisTemplate.opsForZSet().add(redisKey, keyword, Instant.now().toEpochMilli())
+                .flatMap(bo -> Mono.just(Result.ok()))
+                .switchIfEmpty(Mono.just(Result.error(2, "数据库连接异常")));
+    }
+
+    /**
+     * 查找用户搜索历史
+     *
+     * @param acc 用户帐号
+     * @return 搜索历史数组
+     */
+    public Mono<List<String>> getSearchHistory(String acc) {
+        String redisKey = RedisKey.of(BOOK_SEARCH_HISTORY, acc);
+        Range range = Range.of(Range.Bound.inclusive(0L), Range.Bound.inclusive(-1L));
+
+        return redisTemplate.opsForZSet().range(redisKey, range).collectList();
     }
 }

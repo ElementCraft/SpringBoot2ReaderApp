@@ -1,24 +1,19 @@
 package com.whl.ReaderApp.routes;
 
 import com.whl.ReaderApp.domain.Book;
-import com.whl.ReaderApp.domain.User;
 import com.whl.ReaderApp.service.BookService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.MediaType;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.util.Optional;
 
-import static org.springframework.web.reactive.function.BodyExtractors.toDataBuffers;
 import static org.springframework.web.reactive.function.BodyExtractors.toMultipartData;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
@@ -41,15 +36,52 @@ public class BookRoute {
     @Autowired
     private BookService bookService;
 
-
     @Bean
     RouterFunction<?> bookRoutes() {
 
         return nest(path("/api/book"),
                 route(GET("/search/{word}"), this::search)
-                .andRoute(POST("/add"), this::add)
-                .andRoute(POST("/upload").and(accept(MediaType.MULTIPART_FORM_DATA)), this::upload)
+                        .andRoute(POST("/add"), this::add)
+                        .andRoute(POST("/search/history/{account}/{word}"), this::addSearchHistory)
+                        .andRoute(GET("/search/history/{account}"), this::getSearchHistory)
+                        .andRoute(POST("/upload").and(accept(MediaType.MULTIPART_FORM_DATA)), this::upload)
         );
+    }
+
+    /**
+     * 获取用户搜索历史
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> getSearchHistory(ServerRequest request) {
+        String account = request.pathVariable("account");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.getSearchHistory(acc))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
+    }
+
+    /**
+     * 保存用户搜索历史
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> addSearchHistory(ServerRequest request) {
+        String account = request.pathVariable("account");
+        String keyword = request.pathVariable("word");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.addSearchHistory(acc, keyword))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
+
     }
 
     /**
@@ -60,7 +92,7 @@ public class BookRoute {
      */
     private Mono<ServerResponse> upload(ServerRequest request) {
         return request.body(toMultipartData())
-                .filter(data-> !data.isEmpty())
+                .filter(data -> !data.isEmpty())
                 .flatMap(bookService::upload)
                 .flatMap(o -> ok().body(fromObject(o)))
                 .switchIfEmpty(badRequest().build());
