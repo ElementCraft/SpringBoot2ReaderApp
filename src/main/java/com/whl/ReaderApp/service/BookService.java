@@ -156,4 +156,18 @@ public class BookService {
 
         return redisTemplate.opsForZSet().range(redisKey, range).collectList();
     }
+
+    /**
+     * 清空用户搜索历史
+     *
+     * @param acc 用户账号
+     * @return 结果
+     */
+    public Mono<Result<Object>> delSearchHistory(String acc) {
+        String redisKey = RedisKey.of(BOOK_SEARCH_HISTORY, acc);
+
+        return redisTemplate.opsForZSet().delete(redisKey)
+                .map(bo -> Result.ok())
+                .switchIfEmpty(Mono.just(Result.error(1, "数据库连接异常")));
+    }
 }

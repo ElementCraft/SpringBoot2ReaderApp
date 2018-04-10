@@ -44,8 +44,26 @@ public class BookRoute {
                         .andRoute(POST("/add"), this::add)
                         .andRoute(POST("/search/history/{account}/{word}"), this::addSearchHistory)
                         .andRoute(GET("/search/history/{account}"), this::getSearchHistory)
+                        .andRoute(DELETE("/search/history/{account}"), this::delSearchHistory)
                         .andRoute(POST("/upload").and(accept(MediaType.MULTIPART_FORM_DATA)), this::upload)
         );
+    }
+
+    /**
+     * 清空用户搜索历史
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> delSearchHistory(ServerRequest request) {
+        String account = request.pathVariable("account");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.delSearchHistory(acc))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
     }
 
     /**
