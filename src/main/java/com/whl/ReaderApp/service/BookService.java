@@ -64,8 +64,24 @@ public class BookService {
      * @return 结果
      */
     public Mono<Result<Object>> add(Book book) {
+        String name = book.getName().trim();
+        String author = book.getAuthor().trim();
+        String imgUrl = book.getImgIcon();
+        String brief = book.getBrief();
+
         String redisKey = RedisKey.of(BOOK);
-        String redisChildKey = RedisKey.of(BOOK_CHILD, book.getName(), book.getAuthor());
+        String redisChildKey = RedisKey.of(BOOK_CHILD, name, author);
+
+        if (name.isEmpty()) {
+            return Mono.just(Result.error(3, "书名不能为空"));
+        } else if (author.isEmpty()) {
+            return Mono.just(Result.error(4, "作者不能为空"));
+        } else if (imgUrl.isEmpty()) {
+            return Mono.just(Result.error(5, "图片路径有误"));
+        } else if (brief.isEmpty()) {
+            return Mono.just(Result.error(6, "请填写简介"));
+        }
+
         String jsonBook = JsonUtils.toString(book);
 
         return redisTemplate.opsForHash().hasKey(redisKey, redisChildKey)

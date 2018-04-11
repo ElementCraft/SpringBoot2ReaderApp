@@ -125,8 +125,10 @@ public class BookRoute {
     private Mono<ServerResponse> add(ServerRequest request) {
 
         return request.bodyToMono(Book.class)
-                .filter(user -> user.getName() != null)
-                .filter(user -> user.getAuthor() != null)
+                .filter(book -> book.getName() != null)
+                .filter(book -> book.getAuthor() != null)
+                .filter(book -> book.getImgIcon() != null)
+                .filter(book -> book.getBrief() != null)
                 .flatMap(bookService::add)
                 .flatMap(o -> ok().body(fromObject(o)))
                 .switchIfEmpty(badRequest().build());
