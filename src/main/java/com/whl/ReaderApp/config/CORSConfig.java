@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 /**
  * 允许跨域的过滤器
  *
- * @author 小王子
+ * @author whl
  */
 @Component
 public class CORSConfig implements WebFilter {

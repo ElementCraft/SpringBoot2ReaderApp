@@ -33,4 +33,9 @@ public class Book {
      * 封面路径
      */
     private String imgIcon;
+
+    /**
+     * 价格
+     */
+    private Long price;
 }

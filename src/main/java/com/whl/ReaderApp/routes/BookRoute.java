@@ -42,11 +42,69 @@ public class BookRoute {
         return nest(path("/api/book"),
                 route(GET("/search/{word}"), this::search)
                         .andRoute(POST("/add"), this::add)
+                        .andRoute(GET("/shop/{account}"), this::getShop)
+                        .andRoute(POST("/shop/{account}/{bookName}/{author}"), this::addToShop)
+                        .andRoute(DELETE("/shop/{account}/{bookName}/{author}"), this::delFromShop)
                         .andRoute(POST("/search/history/{account}/{word}"), this::addSearchHistory)
                         .andRoute(GET("/search/history/{account}"), this::getSearchHistory)
                         .andRoute(DELETE("/search/history/{account}"), this::delSearchHistory)
                         .andRoute(POST("/upload").and(accept(MediaType.MULTIPART_FORM_DATA)), this::upload)
         );
+    }
+
+    /**
+     * 获取购物车数据
+     *
+     * @param request 请求
+     * @return 响应
+     */
+    private Mono<ServerResponse> getShop(ServerRequest request) {
+        String account = request.pathVariable("account");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.getShop(acc))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
+    }
+
+    /**
+     * 从购物车删除
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> delFromShop(ServerRequest request) {
+        String account = request.pathVariable("account");
+        String bookName = request.pathVariable("bookName");
+        String author = request.pathVariable("author");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.delFromShop(acc, bookName, author))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
+    }
+
+    /**
+     * 添加到购物车
+     *
+     * @param request 请求
+     * @return 响应结果
+     */
+    private Mono<ServerResponse> addToShop(ServerRequest request) {
+        String account = request.pathVariable("account");
+        String bookName = request.pathVariable("bookName");
+        String author = request.pathVariable("author");
+
+        return Optional.of(account)
+                .filter(o -> !o.isEmpty())
+                .map(acc -> bookService.addToShop(acc, bookName, author))
+                .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
+                        .switchIfEmpty(badRequest().build()))
+                .orElse(badRequest().build());
     }
 
     /**
@@ -129,6 +187,7 @@ public class BookRoute {
                 .filter(book -> book.getAuthor() != null)
                 .filter(book -> book.getImgIcon() != null)
                 .filter(book -> book.getBrief() != null)
+                .filter(book -> book.getPrice() != null)
                 .flatMap(bookService::add)
                 .flatMap(o -> ok().body(fromObject(o)))
                 .switchIfEmpty(badRequest().build());
