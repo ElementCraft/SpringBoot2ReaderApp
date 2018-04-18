@@ -43,7 +43,7 @@ public class BookRoute {
                 route(GET("/search/{word}"), this::search)
                         .andRoute(POST("/add"), this::add)
                         .andRoute(GET("/shop/{account}"), this::getShop)
-                        .andRoute(POST("/shop/{account}/{bookName}/{author}"), this::addToShop)
+                        .andRoute(POST("/shop/{account}/{bookName}/{author}/{score}"), this::addToShop)
                         .andRoute(DELETE("/shop/{account}/{bookName}/{author}"), this::delFromShop)
                         .andRoute(POST("/search/history/{account}/{word}"), this::addSearchHistory)
                         .andRoute(GET("/search/history/{account}"), this::getSearchHistory)
@@ -98,10 +98,11 @@ public class BookRoute {
         String account = request.pathVariable("account");
         String bookName = request.pathVariable("bookName");
         String author = request.pathVariable("author");
+        Integer score = Integer.valueOf(request.pathVariable("score"));
 
         return Optional.of(account)
                 .filter(o -> !o.isEmpty())
-                .map(acc -> bookService.addToShop(acc, bookName, author))
+                .map(acc -> bookService.addToShop(acc, bookName, author, score))
                 .map(o -> o.flatMap(t -> ok().body(fromObject(t)))
                         .switchIfEmpty(badRequest().build()))
                 .orElse(badRequest().build());

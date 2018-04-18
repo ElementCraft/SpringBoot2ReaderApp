@@ -24,9 +24,10 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.whl.ReaderApp.tools.RedisKey.*;
@@ -226,13 +227,15 @@ public class BookService {
      * @param acc      用户账号
      * @param bookName 书名
      * @param author   作者
+     * @param score    数量
      * @return 结果
      */
-    public Mono<Result<Object>> addToShop(String acc, String bookName, String author) {
+    public Mono<Result<Object>> addToShop(String acc, String bookName, String author, Integer score) {
         String redisKey = RedisKey.of(BOOK_SHOP, acc);
-        String value = RedisKey.of(bookName, author);
+        String value = RedisKey.of(BOOK_SHOP_CHILD, bookName, author);
 
-        return redisTemplate.opsForZSet().add(redisKey, value, 1)
+
+        return redisTemplate.opsForZSet().add(redisKey, value, score)
                 .flatMap(bo -> Mono.just(Result.ok()))
                 .switchIfEmpty(Mono.just(Result.error(2, "数据库连接异常")));
     }
